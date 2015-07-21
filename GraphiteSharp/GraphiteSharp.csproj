@@ -37,6 +37,8 @@
   <ItemGroup>
     <Compile Include="CarbonClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TcpCarbonClient.cs" />
+    <Compile Include="UdpCarbonClient.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
