@@ -37,8 +37,28 @@ namespace GraphiteSharp
 
         protected override async Task SendAsync(List<byte[]> payloads)
         {
+            if (pSocket == null)
+                pSocket = new Socket(Endpoint.AddressFamily, SocketType.Stream, ProtocolType.IP);
+
+            var args = new SocketAsyncEventArgs();
+            var awaitable = new SocketAwaitable(args);
+
+            if (!pSocket.Connected)
+            {
+                //pSocket.Connect(Endpoint);
+                args.RemoteEndPoint = Endpoint;
+
+                await pSocket.ConnectAsync(awaitable);
+            }
+
+            foreach(var msg in payloads)
+            {
+                args.SetBuffer(msg, 0, msg.Length);
+                await pSocket.SendAsync(awaitable);
+            }
+
             //await Task.Run(() => { Send(payloads); });
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
         }
 
     }

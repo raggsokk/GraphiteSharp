@@ -37,8 +37,29 @@ namespace GraphiteSharp
 
         protected override async Task SendAsync(List<byte[]> payloads)
         {
+            if (pSocket == null)
+            {
+                pSocket = new Socket(Endpoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+                //pSocket.SendToAsync()
+                pSocket.Connect(Endpoint); //UDP doesnt connect. Only sets remote end point.
+            }
+
+            var args = new SocketAsyncEventArgs();
+            //args.RemoteEndPoint = Endpoint;
+            var awaitable = new SocketAwaitable(args);
+
+            // udp with connect??
+            //await pSocket.ConnectAsync(awaitable);
+
+            foreach(var msg in payloads)
+            {
+                args.SetBuffer(msg, 0, msg.Length);
+
+                await pSocket.SendAsync(awaitable);
+            }
+
             //await Task.Run(() => { Send(payloads); });
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
 
             //if (pSocket == null)
             //    pSocket = new Socket(Endpoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
