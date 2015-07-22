@@ -65,7 +65,7 @@ namespace GraphiteSharp
             var t = value.GetType();
 
             if(t.IsPrimitive) // assumes single value type.
-            {
+            {                
                 list.Add(GeneratePayload(MetricName, value, timestamp.Value));
             }
             else
@@ -123,7 +123,13 @@ namespace GraphiteSharp
             }
 
             reuse.Append(MetricName);
-            reuse.AppendFormat(" {0} ", value);
+
+            //TODO: Handle invariant floating point conversion better. Aka Graphite requires "#.#" format, but default norwegian converson is "#,#". Handle this.
+            var v = value.ToString();
+            if (v.Contains(",")) // bad hack conversion.
+                v.Replace(',', '.');
+            reuse.AppendFormat(" {0} ", v);
+
             reuse.Append(DateTimeToUnixEpoch(timestamp));
             reuse.Append(" \n");
 
