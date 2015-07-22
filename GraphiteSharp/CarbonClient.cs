@@ -124,6 +124,8 @@ namespace GraphiteSharp
 
             reuse.Append(MetricName);
             reuse.AppendFormat(" {0} ", value);
+            reuse.Append(DateTimeToUnixEpoch(timestamp));
+            reuse.Append(" \n");
 
             //var bytes = ASCIIEncoding.ASCII.GetBytes(reuse.ToString());
             var bytes = UTF8Encoding.UTF8.GetBytes(reuse.ToString());
@@ -131,9 +133,14 @@ namespace GraphiteSharp
             return bytes;
         }
 
+        private static readonly DateTime UNIX1970 = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
         protected virtual int DateTimeToUnixEpoch(DateTime dt)
         {
-            return (int)(dt.Subtract(new DateTime(1970, 1, 1))).Seconds;
+            //var t = (dt.ToUniversalTime() - UNIX1970);
+            //return (int)t.TotalSeconds;
+            //return (int)(dt.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+            return (int)(dt.ToUniversalTime().Subtract(UNIX1970)).TotalSeconds;
         }
 
         protected static IPEndPoint CreateIpEndpoint(string IpOrHostname, int port = 2003)
@@ -196,7 +203,7 @@ namespace GraphiteSharp
         {
             if(Disposing)
             {
-                if (pSocket != null && pSocket.Connected)
+                if (pSocket != null && pSocket.Connected && pSocket.SocketType != SocketType.Dgram)
                     pSocket.Disconnect(true);
 
             }
