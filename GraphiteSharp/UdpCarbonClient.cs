@@ -44,6 +44,8 @@ namespace GraphiteSharp
                 pSocket.Connect(Endpoint); //UDP doesnt connect. Only sets remote end point.
             }
 
+#if FANCYASYNC
+
             var args = new SocketAsyncEventArgs();
             //args.RemoteEndPoint = Endpoint;
             var awaitable = new SocketAwaitable(args);
@@ -57,6 +59,16 @@ namespace GraphiteSharp
 
                 await pSocket.SendAsync(awaitable);
             }
+
+#else
+
+            foreach(var msg in payloads)
+            {
+                var result = pSocket.BeginSend(msg, 0, msg.Length, SocketFlags.None, null, pSocket);
+                await Task.Factory.FromAsync(result, pSocket.EndSend);
+            }
+
+#endif
 
             //await Task.Run(() => { Send(payloads); });
             //throw new NotImplementedException();

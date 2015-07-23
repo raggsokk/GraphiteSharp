@@ -40,6 +40,7 @@ namespace GraphiteSharp
             if (pSocket == null)
                 pSocket = new Socket(Endpoint.AddressFamily, SocketType.Stream, ProtocolType.IP);
 
+#if FANCYASYNC
             var args = new SocketAsyncEventArgs();
             var awaitable = new SocketAwaitable(args);
 
@@ -56,7 +57,26 @@ namespace GraphiteSharp
                 args.SetBuffer(msg, 0, msg.Length);
                 await pSocket.SendAsync(awaitable);
             }
+#else
 
+            if (!pSocket.Connected)
+            {
+                //await Task.
+                await Task.Factory.FromAsync(
+                    pSocket.BeginConnect,
+                    pSocket.EndConnect,
+                    Endpoint, null);
+            }
+
+            foreach(var msg in payloads)
+            {
+                // no fromasync accepts 4 args.
+                var result = pSocket.BeginSend(msg, 0, msg.Length, SocketFlags.None, null, pSocket);
+
+                await Task.Factory.FromAsync(result, pSocket.EndSend);
+            }
+
+#endif
             //await Task.Run(() => { Send(payloads); });
             //throw new NotImplementedException();
         }
