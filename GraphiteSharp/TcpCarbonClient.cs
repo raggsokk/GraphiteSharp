@@ -40,7 +40,7 @@ namespace GraphiteSharp
             if (pSocket == null)
                 pSocket = new Socket(Endpoint.AddressFamily, SocketType.Stream, ProtocolType.IP);
 
-#if FANCYASYNC
+#if !NOFANCYASYNC
             var args = new SocketAsyncEventArgs();
             var awaitable = new SocketAwaitable(args);
 
@@ -77,8 +77,7 @@ namespace GraphiteSharp
             }
 
 #endif
-            //await Task.Run(() => { Send(payloads); });
-            //throw new NotImplementedException();
+
         }
 
     }
