@@ -16,12 +16,20 @@ namespace GraphiteSharp
         public IPEndPoint Endpoint { get; protected set; }
         public string MetricPrefix { get; set; }
 
+        public CarbonClientOptions Options { get; protected set; }
+
         protected Socket pSocket;
 
-        protected CarbonClient(IPEndPoint endPoint, string metrixPrefix)
+        protected CarbonClient(IPEndPoint endPoint, string metrixPrefix, CarbonClientOptions options = null)
         {
             this.Endpoint = endPoint;
-            this.MetricPrefix = metrixPrefix;
+            //this.MetricPrefix = metrixPrefix;
+            this.MetricPrefix = SanitizeMetricName(metrixPrefix);
+
+            if (options == null)
+                this.Options = CarbonClientOptions.DefaultOptions;
+            else
+                this.Options = options;
         }
 
         #region Public Api
@@ -133,20 +141,74 @@ namespace GraphiteSharp
             reuse.Append(DateTimeToUnixEpoch(timestamp));
             reuse.Append(" \n");
 
+            //TODO: prevent sanatize already sanatized prefix.
+            var bytes = ASCIIEncoding.ASCII.GetBytes(SanitizeMetricName(reuse.ToString()));
             //var bytes = ASCIIEncoding.ASCII.GetBytes(reuse.ToString());
-            var bytes = UTF8Encoding.UTF8.GetBytes(reuse.ToString());
+            //var bytes = UTF8Encoding.UTF8.GetBytes(reuse.ToString());
 
             return bytes;
         }
 
         private static readonly DateTime UNIX1970 = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        protected virtual int DateTimeToUnixEpoch(DateTime dt)
+        /// <summary>
+        /// Sanitizes Metric names obeing CarbonClientOptions.
+        /// </summary>
+        /// <param name="MetricName"></param>
+        /// <param name="reuse"></param>
+        /// <returns></returns>
+        protected virtual string SanitizeMetricName(string MetricName, StringBuilder reuse = null)            
         {
-            //var t = (dt.ToUniversalTime() - UNIX1970);
-            //return (int)t.TotalSeconds;
-            //return (int)(dt.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
-            return (int)(dt.ToUniversalTime().Subtract(UNIX1970)).TotalSeconds;
+            if (!Options.SanitizeMetricNames)
+                return MetricName;
+
+            if (reuse == null)
+                reuse = new StringBuilder();
+            else
+                reuse.Length = 0;
+
+            var charArray = MetricName.ToCharArray();
+
+            bool flagLowerCase = Options.SanitizeToLowerCase;
+
+            foreach(var c in charArray)
+            {
+                switch(c)
+                {
+                    case '\\':
+                    case '/':
+                        reuse.Append('.');
+                        break;
+                    case ' ':
+                    case '_':
+                        reuse.Append('_');
+                        break;
+                    default:
+                        if (flagLowerCase && char.IsLetter(c))
+                            reuse.Append(char.ToLowerInvariant(c));
+                        else
+                            reuse.Append(c);
+
+                        break;
+                }
+            }
+
+            return reuse.ToString();
+        }
+
+        /// <summary>
+        /// Converts DateTime to Unix Epic time.
+        /// It respects CarbonClientOptions.ConvertToUtc
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <returns></returns>
+        protected virtual long DateTimeToUnixEpoch(DateTime dt)
+        {
+            if (this.Options.ConvertToUtc)
+                dt = dt.ToUniversalTime();
+
+            return (long)(dt.Subtract(UNIX1970)).TotalSeconds;
+            //return (int)(dt.ToUniversalTime().Subtract(UNIX1970)).TotalSeconds;
         }
 
         protected static IPEndPoint CreateIpEndpoint(string IpOrHostname, int port = 2003)

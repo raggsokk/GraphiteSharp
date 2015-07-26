@@ -12,12 +12,12 @@ namespace GraphiteSharp
 {
     public class UdpCarbonClient : CarbonClient
     {
-        public UdpCarbonClient(IPEndPoint Endpoint, string MetricPrefix = null)
-            : base(Endpoint, MetricPrefix)
+        public UdpCarbonClient(IPEndPoint Endpoint, string MetricPrefix = null, CarbonClientOptions options = null)
+            : base(Endpoint, MetricPrefix, options)
         { }
 
-        public UdpCarbonClient(string IpOrHostName, int port = 2003, string MetricPrefix = null)
-            : base(CarbonClient.CreateIpEndpoint(IpOrHostName, port), MetricPrefix)
+        public UdpCarbonClient(string IpOrHostname, int port = 2003, string MetricPrefix = null, CarbonClientOptions options = null)
+            : base(CarbonClient.CreateIpEndpoint(IpOrHostname, port), MetricPrefix, options)
         { }
 
         protected override void Send(List<byte[]> payloads)
